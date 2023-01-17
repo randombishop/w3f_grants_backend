@@ -10,11 +10,13 @@ export default class GrantApplication {
   public projectName ;
   public teamName ;
   public paymentAddress ;
+  public paymentCurrency ;
   public level ;
   public abstract ;
 
   public amount ;
   public milestones ;
+
   public status ;
 
 }
