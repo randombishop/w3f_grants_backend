@@ -2,9 +2,9 @@
 
 export default class GrantMilestone {
 
-  public id ;
+  public number ;
   public title ;
+  public cost ;
   public description ;
-  public amount ;
 
 }

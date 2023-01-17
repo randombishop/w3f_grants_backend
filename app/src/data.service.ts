@@ -38,8 +38,8 @@ export class DataService {
     const application_files = fs.readdirSync(applications_folder) ;
     var numFilesProcessed = 0 ;
     var numWarnings = 0 ;
-    const allFiles = 1 ;
-    //const allFiles = application_files.length ;
+    //const allFiles = 10 ;
+    const allFiles = application_files.length ;
     for (var i=0 ; i<allFiles ; i++) {
         const fileName = application_files[i] ;
         var ok = (fileName.endsWith('.md') || fileName.endsWith('.MD')) ;
@@ -53,11 +53,8 @@ export class DataService {
             const result = parser.getResult() ;
             ans.push(result) ;
             numFilesProcessed++ ;
-            //if (!result.pullRequest) {numWarnings++ ;}
-            //if (!result.teamName) {numWarnings++ ;}
-            //if (!result.paymentAddress) {numWarnings++ ;}
-            //if (!result.level) {numWarnings++ ;}
-            if (!result.amount) {numWarnings++ ;}
+            const completeData = result.pullRequest && result.teamName && result.paymentAddress && result.level && result.amount && result.milestones ;
+            if (!completeData) numWarnings++ ;
         }
     }
     console.log('numFilesProcessed: '+numFilesProcessed) ;

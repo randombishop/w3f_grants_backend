@@ -1,4 +1,5 @@
 import GrantApplication from '../model/grant_application';
+import GrantMilestone from '../model/grant_milestone';
 import GrantStatus from '../model/grant_status';
 import CommitInfoParser from './commit_info_parser';
 
@@ -62,17 +63,28 @@ export default class GrantApplicationParser {
         const roadmapLines = lines.slice(roadMapStartsAt) ;
         this.parseRoadmap(roadmapLines) ;
     }
-
-    //console.log(lines.slice(50)) ;
-    //console.log(this.result.fileName+ ' > '+this.result.abstract) ;
-    //if (!this.result.level) {
-    //    console.log(firstLines) ;
-    //}
   }
 
   parseRoadmap(lines) {
-    console.log(lines.slice(0,10)) ;
+    this.result.amount = this.findTotalCost(lines) ;
+    const milestoneIndices = this.findMilestones(lines) ;
+    this.result.milestones = [] ;
+    if (milestoneIndices.length>1) {
+        for (var i=0 ; i<(milestoneIndices.length-1) ; i++) {
+            const milestoneLines = lines.slice(milestoneIndices[i], milestoneIndices[i+1]) ;
+            const milestone = this.parseMilestone(i+1, milestoneLines) ;
+            this.result.milestones.push(milestone) ;
+        }
+    }
+  }
 
+  parseMilestone(number, lines) {
+    const milestone = new GrantMilestone() ;
+    milestone.number = number ;
+    milestone.title = lines[0].replaceAll('#', '').trim() ;
+    milestone.cost = this.findMilestoneCost(lines) ;
+    milestone.description = lines.join('\n') ;
+    return milestone ;
   }
 
 
@@ -176,6 +188,56 @@ export default class GrantApplicationParser {
         var line = lines[i].toLowerCase() ;
         if ( line.startsWith('#') && (line.includes('roadmap') || line.includes(':nut_and_bolt:')) ) {
             return i ;
+        }
+    }
+    return null ;
+  }
+
+  findTotalCost(lines) {
+    for (var i=0 ; i<lines.length ; i++) {
+        var line = lines[i].toLowerCase() ;
+        if (line.includes('total') && line.includes('cost')) {
+            const index=line.indexOf(':**') ;
+            line = line.substring(index+3) ;
+            line = this.cleanString(line) ;
+            return line ;
+        }
+    }
+    return null ;
+  }
+
+  findMilestones(lines) {
+    const ans = [] ;
+    for (var i=0 ; i<lines.length ; i++) {
+        var line = lines[i].toLowerCase() ;
+        line = line.replaceAll('*', '') ;
+        line = line.replaceAll(' ', '') ;
+        if (line.startsWith('##milestone') || line.startsWith('###milestone') || line.startsWith('####milestone')) {
+            ans.push(i) ;
+        }
+    }
+    if (ans.length>0) {
+        const lastIndex = ans[ans.length-1] ;
+        for (i=lastIndex+5 ; i<lines.length ; i++) {
+            line = lines[i].toLowerCase() ;
+            if (line.startsWith('#')) {
+                ans.push(i) ;
+                return ans ;
+            }
+        }
+    }
+    ans.push(lines.length) ;
+    return ans ;
+  }
+
+  findMilestoneCost(lines) {
+    for (var i=0 ; i<lines.length ; i++) {
+        var line = lines[i].toLowerCase() ;
+        if (line.includes('cost')) {
+            const index=line.indexOf(':**') ;
+            line = line.substring(index+3) ;
+            line = this.cleanString(line) ;
+            return line ;
         }
     }
     return null ;
