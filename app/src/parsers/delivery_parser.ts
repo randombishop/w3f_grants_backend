@@ -1,6 +1,17 @@
 import Delivery from '../model/delivery';
+import Link from '../model/link';
 import CommitInfoParser from './commit_info_parser';
 import * as StringSimilarity from 'string-similarity' ;
+
+
+const IGNORE_LINK_TITLES = [
+    'invoice form :pencil:'
+] ;
+
+const IGNORE_LINK_URLS = [
+    'https://github.com/w3f/Grants-Program/blob/master/docs/milestone-deliverables-guidelines.md' ,
+    'https://github.com/w3f/General-Grants-Program/blob/master/grants/milestone-deliverables-guidelines.md'
+] ;
 
 export default class DeliveryParser {
 
@@ -21,8 +32,8 @@ export default class DeliveryParser {
 
   parse() {
     this.parseFileName() ;
-    //this.parseGitLog() ;
-    //this.parseText() ;
+    this.parseGitLog() ;
+    this.parseText() ;
   }
 
   parseFileName() {
@@ -38,7 +49,6 @@ export default class DeliveryParser {
     const matchRating = match.bestMatch.rating ;
     if (matchRating>0.75) {
         this.result.applicationFile = this.grants[match.bestMatchIndex] ;
-        //console.log(this.result.fileName+' > '+this.result.applicationFile+' / '+matchRating) ;
     }
   }
 
@@ -54,22 +64,27 @@ export default class DeliveryParser {
         console.log(this.result.fileName) ;
         console.log(jsonString) ;
     }
-    /*this.result.pullRequest = commits[0].pullRequest ;
     this.result.githubHistory = commits ;
     this.result.githubUser = commits[0].authorName ;
-    this.result.status = new GrantStatus() ;
-    this.result.status.acceptDate = commits[0].date ;
-    if (commits.length>1) {
-        this.result.status.amendDates = commits.slice(1).map(x=>x.date) ;
-    } else {
-        this.result.status.amendDates = [] ;
-    }*/
+    this.result.mergeDate = commits[0].date ;
   }
 
   parseText() {
-    const lines = this.text.split('\n') ;
-    const firstLines = lines.slice(0,25) ;
-
+    this.result.content = this.text ;
+    const regexMdLinks = /\[([^\]]+)\](\([^\)]+\))/gm ;
+    const matches = this.text.matchAll(regexMdLinks) ;
+    const links = [] ;
+    for (const match of matches) {
+        const link = new Link() ;
+        link.title = match[1] ;
+        link.url = match[2] ;
+        link.url = link.url.substring(1,link.url.length-1) ;
+        const ignore = IGNORE_LINK_TITLES.includes(link.title) || IGNORE_LINK_URLS.includes(link.url) ;
+        if (!ignore) {
+            links.push(link) ;
+        }
+    }
+    this.result.links = links ;
   }
 
 
