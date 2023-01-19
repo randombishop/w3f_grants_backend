@@ -1,4 +1,3 @@
-import Delivery from '../model/delivery';
 import Link from '../model/link';
 import CommitInfoParser from './commit_info_parser';
 import * as StringSimilarity from 'string-similarity' ;
@@ -13,48 +12,21 @@ const IGNORE_LINK_URLS = [
     'https://github.com/w3f/General-Grants-Program/blob/master/grants/milestone-deliverables-guidelines.md'
 ] ;
 
-export default class DeliveryParser {
-
-  private text ;
-  private log ;
-  private grants ;
-  private result ;
-
-  constructor(fileName, text, log, grant_files) {
-    //console.log('<<<'+fileName+'>>>\n'+text) ;
-    this.text = text ;
-    this.log = log ;
-    this.grants = grant_files ;
-    this.result = new Delivery() ;
-    this.result.fileName = fileName ;
-    this.parse() ;
-  }
-
-  parse() {
-    this.parseFileName() ;
-    this.parseGitLog() ;
-    this.parseText() ;
-  }
-
-  parseFileName() {
-    var key = this.result.fileName ;
-    key = key.toLowerCase().replace('.md', '') ;
-    this.result.milestoneNumber = parseInt(key.substring(key.length-1)) ;
-    key = key.substring(0, key.length-1) ;
-    key = key.replace('milestone', '') ;
-    key = this.cleanFileName(key) ;
-    const targets = this.grants.map(x=>this.cleanFileName(x.toLowerCase().replace('.md', '')))
+export function findGrantMatch(key, grants) {
+    const targets = grants.map(x=>cleanFileName(x.toLowerCase().replace('.md', '')))
     const match = StringSimilarity.findBestMatch(key, targets) ;
     const matchText = match.bestMatch.target ;
     const matchRating = match.bestMatch.rating ;
     if (matchRating>0.75) {
-        this.result.applicationFile = this.grants[match.bestMatchIndex] ;
+        return grants[match.bestMatchIndex] ;
+    } else {
+        return null ;
     }
-  }
+}
 
-  parseGitLog() {
-    const lastComma = this.log.lastIndexOf(',') ;
-    const jsonString = '['+this.log.substring(0, lastComma)+']' ;
+export function parseGitLog(log) {
+    const lastComma = log.lastIndexOf(',') ;
+    const jsonString = '['+log.substring(0, lastComma)+']' ;
     const commitsData = JSON.parse(jsonString) ;
     const commits = commitsData.map((data) => {
         return (new CommitInfoParser(data)).getResult() ;
@@ -64,15 +36,12 @@ export default class DeliveryParser {
         console.log(this.result.fileName) ;
         console.log(jsonString) ;
     }
-    this.result.githubHistory = commits ;
-    this.result.githubUser = commits[0].authorName ;
-    this.result.mergeDate = commits[0].date ;
+    return commits ;
   }
 
-  parseText() {
-    this.result.content = this.text ;
+export function parseLinks(text) {
     const regexMdLinks = /\[([^\]]+)\](\([^\)]+\))/gm ;
-    const matches = this.text.matchAll(regexMdLinks) ;
+    const matches = text.matchAll(regexMdLinks) ;
     const links = [] ;
     for (const match of matches) {
         const link = new Link() ;
@@ -84,11 +53,10 @@ export default class DeliveryParser {
             links.push(link) ;
         }
     }
-    this.result.links = links ;
-  }
+    return links ;
+}
 
-
-  cleanFileName(s) {
+export function cleanFileName(s) {
     s = s.replaceAll('_', ' ') ;
     s = s.replaceAll('-', ' ') ;
     s = s.replaceAll('.', ' ') ;
@@ -96,7 +64,7 @@ export default class DeliveryParser {
     return s ;
   }
 
-  cleanString(s) {
+export function cleanString(s) {
     s = s.replaceAll('#', ' ') ;
     s = s.replaceAll('*', ' ') ;
     s = s.replaceAll(':', ' ') ;
@@ -105,10 +73,4 @@ export default class DeliveryParser {
     s = s.replaceAll(')', ' ') ;
     s = s.trim() ;
     return s ;
-  }
-
-  getResult() {
-    return this.result ;
-  }
-
 }
