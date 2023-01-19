@@ -28,6 +28,10 @@ export default class EvaluationParser {
   parseFileName() {
     var key = this.result.fileName ;
     key = key.toLowerCase().replace('.md', '') ;
+    const lastUnderscore = key.lastIndexOf('_') ;
+    const evaluator = key.substring(lastUnderscore+1) ;
+    this.result.evaluator = evaluator ;
+    key = key.substring(0,lastUnderscore) ;
     this.result.milestoneNumber = parseInt(key.substring(key.length-1)) ;
     key = key.substring(0, key.length-1) ;
     key = key.replace('milestone', '') ;

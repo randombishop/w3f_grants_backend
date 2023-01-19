@@ -99,11 +99,11 @@ export class DataService {
 
   async parseEvaluations(): Promise<object> {
     const folder = process.env.TMP_DATA_DIRECTORY+'/Grant-Milestone-Delivery/evaluations' ;
-    const excludeFiles = [] ;
+    const excludeFiles = ['evaluation-template.md'] ;
     function parseFunction(fileName, text, log) {
         const parser = new EvaluationParser(fileName, text, log, LIST_FILES) ;
         const result = parser.getResult() ;
-        const warning = !(true) ;
+        const warning = !(result.fileName && result.evaluator && result.milestoneNumber && result.applicationFile) ;
         return [result, warning] ;
     }
     const [data, numFilesProcessed, numWarnings] = await this.parseFolderData(folder, excludeFiles, parseFunction) ;

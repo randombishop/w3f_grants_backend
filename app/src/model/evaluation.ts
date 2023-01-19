@@ -3,6 +3,7 @@
 export default class Evaluation {
 
   public fileName ;
+  public evaluator ;
   public milestoneNumber ;
   public applicationFile ;
 

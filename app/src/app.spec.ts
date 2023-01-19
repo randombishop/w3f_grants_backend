@@ -33,10 +33,10 @@ describe('Main Application Tests', () => {
       //console.log(apps) ;
       //const fileNames = dataService.getApplicationFileNames() ;
       //console.log(JSON.stringify(fileNames)) ;
-      const deliveries = await dataService.parseDeliveries() ;
-      console.log(deliveries) ;
-      //const evaluations = await dataService.parseEvaluations() ;
-      //console.log(evaluations) ;
+      //const deliveries = await dataService.parseDeliveries() ;
+      //console.log(deliveries) ;
+      const evaluations = await dataService.parseEvaluations() ;
+      console.log(evaluations) ;
     });
   });
 
