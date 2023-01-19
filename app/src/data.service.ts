@@ -36,34 +36,43 @@ export class DataService {
     } ;
   }
 
-  async parseApplications(): Promise<object> {
-    const applications = [] ;
-    const tmp_data_folder = process.env.TMP_DATA_DIRECTORY ;
-    const applications_folder = tmp_data_folder+'/Grants-Program/applications' ;
-    await Shell.cd(applications_folder) ;
-    const application_files = fs.readdirSync(applications_folder) ;
+  async parseFolderData(folder, excludeFiles, parseFunction): Promise<Array<any>> {
+    const ans = [] ;
+    await Shell.cd(folder) ;
+    const folder_files = fs.readdirSync(folder) ;
     var numFilesProcessed = 0 ;
     var numWarnings = 0 ;
     //const allFiles = 10 ;
-    const allFiles = application_files.length ;
+    const allFiles = folder_files.length ;
     for (var i=0 ; i<allFiles ; i++) {
-        const fileName = application_files[i] ;
+        const fileName = folder_files[i] ;
         var ok = (fileName.endsWith('.md') || fileName.endsWith('.MD')) ;
-        ok = ok && (fileName!='index.md') ;
+        ok = ok && (!excludeFiles.includes(fileName)) ;
         if (ok) {
-            const app_file = applications_folder + '/' + fileName ;
-            const text = fs.readFileSync(app_file).toString()
+            const parse_file = folder + '/' + fileName ;
+            const text = fs.readFileSync(parse_file).toString()
             const format = ' --date=iso-strict --pretty=format:\'{%n  "commit": "%H",%n  "author": "%aN <%aE>",%n  "date": "%ad",%n  "message": "%f"%n },%n  \' ' ;
             const log = (await Shell.exec('git log --first-parent master '+format+' "'+fileName+'"', {silent:true})).stdout ;
-            const parser = new GrantApplicationParser(fileName, text, log) ;
-            const result = parser.getResult() ;
-            applications.push(result) ;
+            const [result, warning] = parseFunction(fileName, text, log) ;
+            ans.push(result) ;
             numFilesProcessed++ ;
-            const completeData = result.pullRequest && result.teamName && result.paymentAddress && result.level && result.amount && result.milestones ;
-            if (!completeData) numWarnings++ ;
+            if (warning) numWarnings++ ;
         }
     }
-    this.db.applications = applications ;
+    return [ans, numFilesProcessed, numWarnings] ;
+  }
+
+  async parseApplications(): Promise<object> {
+    const folder = process.env.TMP_DATA_DIRECTORY+'/Grants-Program/applications' ;
+    const excludeFiles = ['index.md'] ;
+    function parseFunction(fileName, text, log) {
+        const parser = new GrantApplicationParser(fileName, text, log) ;
+        const result = parser.getResult() ;
+        const warning = !(result.pullRequest && result.teamName && result.paymentAddress && result.level && result.amount && result.milestones) ;
+        return [result, warning] ;
+    }
+    const [data, numFilesProcessed, numWarnings] = await this.parseFolderData(folder, excludeFiles, parseFunction) ;
+    this.db.applications = data ;
     return {
         numFilesProcessed: numFilesProcessed,
         numWarnings: numWarnings
@@ -71,34 +80,33 @@ export class DataService {
   }
 
   async parseDeliveries(): Promise<object> {
-    const deliveries = [] ;
-    const tmp_data_folder = process.env.TMP_DATA_DIRECTORY ;
-    const deliveries_folder = tmp_data_folder+'/Grant-Milestone-Delivery/deliveries' ;
-    await Shell.cd(deliveries_folder) ;
-    const delivery_files = fs.readdirSync(deliveries_folder) ;
-    var numFilesProcessed = 0 ;
-    var numWarnings = 0 ;
-    //const allFiles = 10 ;
-    const allFiles = delivery_files.length ;
-    for (var i=0 ; i<allFiles ; i++) {
-        const fileName = delivery_files[i] ;
-        var ok = (fileName.endsWith('.md') || fileName.endsWith('.MD')) ;
-        ok = ok && (fileName!='.delivery_testing.md') ;
-        ok = ok && (fileName!='milestone-delivery-template.md') ;
-        if (ok) {
-            const delivery_file = deliveries_folder + '/' + fileName ;
-            const text = fs.readFileSync(delivery_file).toString()
-            const format = ' --date=iso-strict --pretty=format:\'{%n  "commit": "%H",%n  "author": "%aN <%aE>",%n  "date": "%ad",%n  "message": "%f"%n },%n  \' ' ;
-            const log = (await Shell.exec('git log --first-parent master '+format+' "'+fileName+'"', {silent:true})).stdout ;
-            const parser = new DeliveryParser(fileName, text, log, LIST_FILES) ;
-            const result = parser.getResult() ;
-            deliveries.push(result) ;
-            numFilesProcessed++ ;
-            const completeData = result.fileName && result.milestoneNumber && result.applicationFile;
-            if (!completeData) numWarnings++ ;
-        }
+    const folder = process.env.TMP_DATA_DIRECTORY+'/Grant-Milestone-Delivery/deliveries' ;
+    const excludeFiles = ['.delivery_testing.md', 'milestone-delivery-template.md'] ;
+    function parseFunction(fileName, text, log) {
+        const parser = new DeliveryParser(fileName, text, log, LIST_FILES) ;
+        const result = parser.getResult() ;
+        const warning = !(result.fileName && result.milestoneNumber && result.applicationFile) ;
+        return [result, warning] ;
     }
-    this.db.deliveries = deliveries ;
+    const [data, numFilesProcessed, numWarnings] = await this.parseFolderData(folder, excludeFiles, parseFunction) ;
+    this.db.deliveries = data ;
+    return {
+        numFilesProcessed: numFilesProcessed,
+        numWarnings: numWarnings
+    }
+  }
+
+  async parseEvaluations(): Promise<object> {
+    const folder = process.env.TMP_DATA_DIRECTORY+'/Grant-Milestone-Delivery/evaluations' ;
+    const excludeFiles = [] ;
+    function parseFunction(fileName, text, log) {
+        const parser = new EvaluationParser(fileName, text, log, LIST_FILES) ;
+        const result = parser.getResult() ;
+        const warning = !(true) ;
+        return [result, warning] ;
+    }
+    const [data, numFilesProcessed, numWarnings] = await this.parseFolderData(folder, excludeFiles, parseFunction) ;
+    this.db.evaluations = data ;
     return {
         numFilesProcessed: numFilesProcessed,
         numWarnings: numWarnings
