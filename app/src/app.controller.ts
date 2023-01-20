@@ -5,8 +5,14 @@ import { DataService } from './data.service';
 export class AppController {
   constructor(private readonly dataService: DataService) {}
 
-  @Get()
+  @Get('hello')
   getHello(): string {
     return this.dataService.getHello();
   }
+
+  @Get('applications')
+  getApplications(): object {
+    return this.dataService.getApplications();
+  }
+
 }

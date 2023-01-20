@@ -1,7 +1,8 @@
 import GrantApplication from '../model/grant_application';
 import GrantMilestone from '../model/grant_milestone';
 import GrantStatus from '../model/grant_status';
-import CommitInfoParser from './commit_info_parser';
+import {cleanString, parseGitLog} from './utils' ;
+
 
 export default class GrantApplicationParser {
 
@@ -23,17 +24,7 @@ export default class GrantApplicationParser {
   }
 
   parseGitLog() {
-    const lastComma = this.log.lastIndexOf(',') ;
-    const jsonString = '['+this.log.substring(0, lastComma)+']' ;
-    const commitsData = JSON.parse(jsonString) ;
-    const commits = commitsData.map((data) => {
-        return (new CommitInfoParser(data)).getResult() ;
-    }).reverse() ;
-    if (commits.length==0) {
-        console.log('NO COMMITS???') ;
-        console.log(this.result.fileName) ;
-        console.log(jsonString) ;
-    }
+    const commits = parseGitLog(this.log) ;
     this.result.pullRequest = commits[0].pullRequest ;
     this.result.githubHistory = commits ;
     this.result.githubUser = commits[0].authorName ;
@@ -108,7 +99,7 @@ export default class GrantApplicationParser {
             line = line.replace('TEAM', ' ') ;
             line = line.replace('NAME', ' ') ;
             line = line.replace('PROPOSER', ' ') ;
-            line = this.cleanString(line) ;
+            line = cleanString(line) ;
             return line ;
         }
     }
@@ -123,7 +114,7 @@ export default class GrantApplicationParser {
             line = line.replace('address', ' ') ;
             line = line.replace('ethereum', ' ') ;
             line = line.replace('erc20', ' ') ;
-            line = this.cleanString(line) ;
+            line = cleanString(line) ;
             //console.log('findPaymentInfo: '+line) ;
             const parts = line.split(' ') ;
             const address = this.findAddress(parts) ;
@@ -163,7 +154,7 @@ export default class GrantApplicationParser {
         if (line.includes('level')) {
             const index=line.indexOf(':**') ;
             line = line.substring(index) ;
-            line = this.cleanString(line) ;
+            line = cleanString(line) ;
             const level = parseInt(line) ;
             if (LEVELS.includes(level)) {
                 return level ;
@@ -199,7 +190,7 @@ export default class GrantApplicationParser {
         if (line.includes('total') && line.includes('cost')) {
             const index=line.indexOf(':**') ;
             line = line.substring(index+3) ;
-            line = this.cleanString(line) ;
+            line = cleanString(line) ;
             return line ;
         }
     }
@@ -236,22 +227,11 @@ export default class GrantApplicationParser {
         if (line.includes('cost')) {
             const index=line.indexOf(':**') ;
             line = line.substring(index+3) ;
-            line = this.cleanString(line) ;
+            line = cleanString(line) ;
             return line ;
         }
     }
     return null ;
-  }
-
-  cleanString(s) {
-    s = s.replaceAll('#', ' ') ;
-    s = s.replaceAll('*', ' ') ;
-    s = s.replaceAll(':', ' ') ;
-    s = s.replaceAll('-', ' ') ;
-    s = s.replaceAll('(', ' ') ;
-    s = s.replaceAll(')', ' ') ;
-    s = s.trim() ;
-    return s ;
   }
 
   getResult() {

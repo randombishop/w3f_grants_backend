@@ -7,4 +7,7 @@ export default class GrantMilestone {
   public cost ;
   public description ;
 
+  public delivery ;
+  public evaluation ;
+
 }
