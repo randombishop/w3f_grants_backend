@@ -10,11 +10,6 @@ export class AppController {
     return this.dataService.getHello();
   }
 
-  @Get('full_sync')
-  fullSync(): object {
-    return this.dataService.parseApplications();
-  }
-
   @Get('applications')
   getApplications(): object {
     return this.dataService.getApplications();

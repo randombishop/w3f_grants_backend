@@ -29,6 +29,7 @@ describe('Main Application Tests', () => {
     it('should download the repos and sync the db', async () => {
       const output = await dataService.fullSync() ;
       console.log(output) ;
+      //dataService.buildMainDataset() ;
     });
   });
 

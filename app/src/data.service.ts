@@ -16,7 +16,11 @@ export class DataService {
   private octokit ;
 
   constructor() {
-    this.db = {} ;
+    try {
+        this.loadFromFile() ;
+    } catch (e) {
+        this.db = {} ;
+    }
     this.octokit = new Octokit() ;
   }
 
@@ -72,7 +76,11 @@ export class DataService {
         return [result, warning] ;
     }
     const [data, numFilesProcessed, numWarnings] = await this.parseFolderData(folder, excludeFiles, parseFunction) ;
-    this.db.applications = data ;
+    this.db.applications = {} ;
+    for (var i in data) {
+        const o = data[i] ;
+        this.db.applications[o.fileName]=o ;
+    }
     this.db.applicationFileNames = data.map(x=>x.fileName) ;
     return {
         numFilesProcessed: numFilesProcessed,
@@ -91,7 +99,11 @@ export class DataService {
         return [result, warning] ;
     }
     const [data, numFilesProcessed, numWarnings] = await this.parseFolderData(folder, excludeFiles, parseFunction) ;
-    this.db.deliveries = data ;
+    this.db.deliveries = {} ;
+    for (var i in data) {
+        const o = data[i] ;
+        this.db.deliveries[o.applicationFile+'/'+o.milestoneNumber]=o ;
+    }
     return {
         numFilesProcessed: numFilesProcessed,
         numWarnings: numWarnings
@@ -109,7 +121,11 @@ export class DataService {
         return [result, warning] ;
     }
     const [data, numFilesProcessed, numWarnings] = await this.parseFolderData(folder, excludeFiles, parseFunction) ;
-    this.db.evaluations = data ;
+    this.db.evaluations = {} ;
+    for (var i in data) {
+        const o = data[i] ;
+        this.db.evaluations[o.applicationFile+'/'+o.milestoneNumber]=o ;
+    }
     return {
         numFilesProcessed: numFilesProcessed,
         numWarnings: numWarnings
@@ -117,7 +133,23 @@ export class DataService {
   }
 
   buildMainDataset() {
-
+    const data = {} ;
+    data['applications'] = Object.values(this.db.applications) ;
+    for (var i in data['applications']) {
+        const application = data['applications'][i] ;
+        const milestones = application.milestones ;
+        if (milestones) {
+            for (var j in milestones) {
+                const milestone = milestones[j] ;
+                const grant = application.fileName ;
+                const milestoneNumber = milestone.number ;
+                const key = grant + '/' + milestoneNumber ;
+                milestone.delivery = this.db['deliveries'][key] ;
+                milestone.evaluation = this.db['evaluations'][key] ;
+            }
+        }
+    }
+    this.db['dataset'] = data ;
   }
 
   async fullSync(): Promise<object> {
@@ -132,7 +164,7 @@ export class DataService {
   }
 
   getApplications(): object {
-    return this.db.applications ;
+    return this.db.dataset.applications ;
   }
 
   getApplicationFileNames(): Array<string> {
@@ -148,6 +180,10 @@ export class DataService {
     const path = process.env.TMP_DATA_DIRECTORY+'/db.json' ;
     const data = JSON.parse(fs.readFileSync(path, 'utf8'));
     this.db = data ;
+  }
+
+  copyData(x) {
+    return JSON.parse(JSON.stringify(x)) ;
   }
 
 }
