@@ -27,16 +27,8 @@ describe('Main Application Tests', () => {
 
   describe('Full Sync', () => {
     it('should download the repos and sync the db', async () => {
-      //const git = await dataService.gitClone() ;
-      //console.log(git) ;
-      //const apps = await dataService.parseApplications() ;
-      //console.log(apps) ;
-      //const fileNames = dataService.getApplicationFileNames() ;
-      //console.log(JSON.stringify(fileNames)) ;
-      //const deliveries = await dataService.parseDeliveries() ;
-      //console.log(deliveries) ;
-      const evaluations = await dataService.parseEvaluations() ;
-      console.log(evaluations) ;
+      const output = await dataService.fullSync() ;
+      console.log(output) ;
     });
   });
 
