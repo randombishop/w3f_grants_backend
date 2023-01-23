@@ -16,6 +16,8 @@ export default class GrantApplication {
 
   public amount ;
   public milestones ;
+  public numMilestones ;
+  public numMilestonesDelivered ;
 
   public status ;
 

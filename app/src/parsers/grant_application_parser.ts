@@ -4,6 +4,9 @@ import GrantStatus from '../model/grant_status';
 import {cleanString, parseGitLog} from './utils' ;
 
 
+const CURRENCIES = ['usdt', 'usdc', 'bitcoin', 'btc', 'eth', 'dot', 'ksm', 'eur']
+
+
 export default class GrantApplicationParser {
 
   private text ;
@@ -136,13 +139,38 @@ export default class GrantApplicationParser {
     return null ;
   }
 
+  findAmountAndCurrency(line) {
+    const parts = line.split(' ') ;
+    const currency = this.findCurrency(parts) ;
+    const amount = this.findAmount(parts) ;
+    if (amount && currency) {
+        return amount+' '+currency ;
+    } else if (amount) {
+        return amount+'' ;
+    } else {
+        return null ;
+    }
+  }
+
   findCurrency(parts) {
-    const currencies = ['usdt', 'usdc', 'bitcoin', 'btc', 'eth', 'dot', 'ksm']
     for (var i in parts) {
         var s = parts[i] ;
-        if (currencies.includes(s)) {
+        if (CURRENCIES.includes(s)) {
             return s.toUpperCase() ;
         }
+    }
+    return null ;
+  }
+
+  findAmount(parts) {
+    for (var i in parts) {
+        var s = parts[i].replaceAll(',', '') ;
+        try {
+            const amount = Math.floor(s) ;
+            if (amount) {
+                return amount ;
+            }
+        } catch (e) {}
     }
     return null ;
   }
@@ -191,7 +219,10 @@ export default class GrantApplicationParser {
             const index=line.indexOf(':**') ;
             line = line.substring(index+3) ;
             line = cleanString(line) ;
-            return line ;
+            const amount = this.findAmount(line.split(' ')) ;
+            if (amount) {
+                return amount ;
+            }
         }
     }
     return null ;
@@ -228,7 +259,10 @@ export default class GrantApplicationParser {
             const index=line.indexOf(':**') ;
             line = line.substring(index+3) ;
             line = cleanString(line) ;
-            return line ;
+            const amount = this.findAmount(line.split(' ')) ;
+            if (amount) {
+                return amount ;
+            }
         }
     }
     return null ;

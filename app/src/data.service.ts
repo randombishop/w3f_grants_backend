@@ -133,11 +133,10 @@ export class DataService {
   }
 
   buildMainDataset() {
-    const data = {} ;
-    data['applications'] = Object.values(this.db.applications) ;
-    for (var i in data['applications']) {
-        const application = data['applications'][i] ;
+    for (var i in this.db.applications) {
+        const application = this.db.applications[i] ;
         const milestones = application.milestones ;
+        var delivered = 0 ;
         if (milestones) {
             for (var j in milestones) {
                 const milestone = milestones[j] ;
@@ -146,9 +145,16 @@ export class DataService {
                 const key = grant + '/' + milestoneNumber ;
                 milestone.delivery = this.db['deliveries'][key] ;
                 milestone.evaluation = this.db['evaluations'][key] ;
+                if (milestone.delivery && milestone.evaluation) {
+                    delivered++ ;
+                }
             }
+            application.numMilestones = milestones.length ;
+            application.numMilestonesDelivered = delivered ;
         }
     }
+    const data = {} ;
+    data['grants'] = Object.values(this.db.applications) ;
     this.db['dataset'] = data ;
   }
 
@@ -163,8 +169,8 @@ export class DataService {
     return ans ;
   }
 
-  getApplications(): object {
-    return this.db.dataset.applications ;
+  getGrants(): object {
+    return this.db.dataset.grants ;
   }
 
   getApplicationFileNames(): Array<string> {

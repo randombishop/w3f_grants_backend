@@ -10,9 +10,9 @@ export class AppController {
     return this.dataService.getHello();
   }
 
-  @Get('applications')
-  getApplications(): object {
-    return this.dataService.getApplications();
+  @Get('grants')
+  getGrants(): object {
+    return this.dataService.getGrants();
   }
 
 }
