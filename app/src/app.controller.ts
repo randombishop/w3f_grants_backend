@@ -1,4 +1,4 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Param } from '@nestjs/common';
 import { DataService } from './data.service';
 
 @Controller()
@@ -13,6 +13,11 @@ export class AppController {
   @Get('grants')
   getGrants(): object {
     return this.dataService.getGrants();
+  }
+
+  @Get('grant/:id')
+  getGrantById(@Param('id') id): object {
+    return this.dataService.getGrantById(id);
   }
 
 }

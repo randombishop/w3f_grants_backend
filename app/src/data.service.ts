@@ -173,6 +173,10 @@ export class DataService {
     return this.db.dataset.grants ;
   }
 
+  getGrantById(id): object {
+    return this.db.applications[id] ;
+  }
+
   getApplicationFileNames(): Array<string> {
     return this.db.applicationFileNames ;
   }
