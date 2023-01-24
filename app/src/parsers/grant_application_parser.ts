@@ -4,7 +4,7 @@ import GrantStatus from '../model/grant_status';
 import {cleanString, parseGitLog, parseLinks} from './utils' ;
 
 
-const CURRENCIES = ['usdt', 'usdc', 'bitcoin', 'btc', 'eth', 'dot', 'ksm', 'eur']
+const CURRENCIES = ['usdt', 'usdc', 'bitcoin', 'btc', 'eth', 'dot', 'ksm', 'eur', 'usd']
 
 
 export default class GrantApplicationParser {
@@ -68,7 +68,9 @@ export default class GrantApplicationParser {
   }
 
   parseRoadmap(lines) {
-    this.result.amount = this.findTotalCost(lines) ;
+    const [amount, currency] = this.findTotalCost(lines) ;
+    this.result.amount = amount ;
+    this.result.amountCurrency = currency ;
     const milestoneIndices = this.findMilestones(lines) ;
     this.result.milestones = [] ;
     if (milestoneIndices.length>1) {
@@ -147,19 +149,6 @@ export default class GrantApplicationParser {
     return null ;
   }
 
-  findAmountAndCurrency(line) {
-    const parts = line.split(' ') ;
-    const currency = this.findCurrency(parts) ;
-    const amount = this.findAmount(parts) ;
-    if (amount && currency) {
-        return amount+' '+currency ;
-    } else if (amount) {
-        return amount+'' ;
-    } else {
-        return null ;
-    }
-  }
-
   findCurrency(parts) {
     for (var i in parts) {
         var s = parts[i] ;
@@ -227,13 +216,15 @@ export default class GrantApplicationParser {
             const index=line.indexOf(':**') ;
             line = line.substring(index+3) ;
             line = cleanString(line) ;
-            const amount = this.findAmount(line.split(' ')) ;
+            const parts = line.split(' ') ;
+            const amount = this.findAmount(parts) ;
+            const currency = this.findCurrency(parts) ;
             if (amount) {
-                return amount ;
+                return [amount,currency] ;
             }
         }
     }
-    return null ;
+    return [null,null] ;
   }
 
   findMilestones(lines) {
