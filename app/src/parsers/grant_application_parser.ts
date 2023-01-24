@@ -51,7 +51,14 @@ export default class GrantApplicationParser {
     this.result.level = this.findLevel(firstLines) ;
     const overviewStartsAt = this.findOverview(firstLines) ;
     const overviewEndsAt = overviewStartsAt + 10 ;
-    this.result.abstract = lines.slice(overviewStartsAt+1, overviewEndsAt).join('\n') ;
+    var overviewLines = lines.slice(overviewStartsAt+1, overviewEndsAt) ;
+    overviewLines = overviewLines.filter((line) => {
+        if (line.startsWith('#') && line.toLowerCase().includes('overview')) {
+            return false ;
+        }
+        return true ;
+    }) ;
+    this.result.abstract = overviewLines.join('\n') ;
     const roadMapStartsAt = this.findRoadmap(lines) ;
     if (roadMapStartsAt) {
         const roadmapLines = lines.slice(roadMapStartsAt) ;
