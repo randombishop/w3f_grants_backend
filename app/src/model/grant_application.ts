@@ -13,6 +13,7 @@ export default class GrantApplication {
   public paymentCurrency ;
   public level ;
   public abstract ;
+  public links ;
 
   public amount ;
   public milestones ;

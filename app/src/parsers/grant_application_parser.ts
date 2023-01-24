@@ -1,7 +1,7 @@
 import GrantApplication from '../model/grant_application';
 import GrantMilestone from '../model/grant_milestone';
 import GrantStatus from '../model/grant_status';
-import {cleanString, parseGitLog} from './utils' ;
+import {cleanString, parseGitLog, parseLinks} from './utils' ;
 
 
 const CURRENCIES = ['usdt', 'usdc', 'bitcoin', 'btc', 'eth', 'dot', 'ksm', 'eur']
@@ -64,6 +64,7 @@ export default class GrantApplicationParser {
         const roadmapLines = lines.slice(roadMapStartsAt) ;
         this.parseRoadmap(roadmapLines) ;
     }
+    this.result.links = parseLinks(this.text) ;
   }
 
   parseRoadmap(lines) {
