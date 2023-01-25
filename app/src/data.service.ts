@@ -68,7 +68,7 @@ export class DataService {
 
   async parseApplications(): Promise<object> {
     const folder = process.env.TMP_DATA_DIRECTORY+'/Grants-Program/applications' ;
-    const excludeFiles = ['index.md'] ;
+    const excludeFiles = ['index.md', 'application-template-research.md'] ;
     function parseFunction(fileName, text, log) {
         const parser = new GrantApplicationParser(fileName, text, log) ;
         const result = parser.getResult() ;

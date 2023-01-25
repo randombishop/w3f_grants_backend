@@ -43,7 +43,10 @@ export default class GrantApplicationParser {
   parseText() {
     const lines = this.text.split('\n') ;
     const firstLines = lines.slice(0,25) ;
-    this.result.projectName = this.findProjectName(firstLines) ;
+    this.result.projectName = this.findProjectName1(lines.slice(0,10)) ;
+    if (!this.result.projectName) {
+        this.result.projectName = this.findProjectName2(firstLines) ;
+    }
     this.result.teamName = this.findTeamName(firstLines) ;
     const paymentInfo = this.findPaymentInfo(firstLines) ;
     this.result.paymentAddress = paymentInfo[0] ;
@@ -91,12 +94,26 @@ export default class GrantApplicationParser {
     return milestone ;
   }
 
+  findProjectName1(lines) {
+    for (var i=0 ; i<lines.length ; i++) {
+        var line = lines[i] ;
+        if (line.toUpperCase().includes('PROJECT') && line.toUpperCase().includes('NAME')) {
+            line = line.replace(/project/ig, ' ') ;
+            line = line.replace(/name/ig, ' ') ;
+            line = cleanString(line) ;
+            if (line.length<100) {
+                return line ;
+            }
+        }
+    }
+    return null ;
+  }
 
-  findProjectName(lines) {
+  findProjectName2(lines) {
     for (var i=0 ; i<lines.length ; i++) {
         const line = lines[i] ;
-        if (line.includes('#')) {
-            const title = line.replace('#', '').trim() ;
+        if (line.startsWith('#')) {
+            const title = line.replaceAll('#', '').trim() ;
             if (title!='W3F Grant Proposal') {
                 return title ;
             }
@@ -107,11 +124,11 @@ export default class GrantApplicationParser {
 
   findTeamName(lines) {
     for (var i=0 ; i<lines.length ; i++) {
-        var line = lines[i].toUpperCase() ;
-        if (line.includes('TEAM') || line.includes('PROPOSER')) {
-            line = line.replace('TEAM', ' ') ;
-            line = line.replace('NAME', ' ') ;
-            line = line.replace('PROPOSER', ' ') ;
+        var line = lines[i] ;
+        if (line.toUpperCase().includes('TEAM') || line.toUpperCase().includes('PROPOSER')) {
+            line = line.replace(/team/ig, ' ') ;
+            line = line.replace(/name/ig, ' ') ;
+            line = line.replace(/proposer/ig, ' ') ;
             line = cleanString(line) ;
             return line ;
         }
