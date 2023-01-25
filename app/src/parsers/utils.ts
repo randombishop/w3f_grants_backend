@@ -4,10 +4,12 @@ import * as StringSimilarity from 'string-similarity' ;
 
 
 const IGNORE_LINK_TITLES = [
-    'invoice form :pencil:'
+    'invoice form :pencil:',
+    'Levels'
 ] ;
 
 const IGNORE_LINK_URLS = [
+    'https://github.com/w3f/Grants-Program/tree/master#level_slider-levels',
     'https://github.com/w3f/Grants-Program/blob/master/docs/milestone-deliverables-guidelines.md' ,
     'https://github.com/w3f/General-Grants-Program/blob/master/grants/milestone-deliverables-guidelines.md'
 ] ;
