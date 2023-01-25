@@ -1,7 +1,10 @@
 import GrantApplication from '../model/grant_application';
 import GrantMilestone from '../model/grant_milestone';
 import GrantStatus from '../model/grant_status';
-import {cleanString, parseGitLog} from './utils' ;
+import {cleanString, parseGitLog, parseLinks} from './utils' ;
+
+
+const CURRENCIES = ['usdt', 'usdc', 'bitcoin', 'btc', 'eth', 'dot', 'ksm', 'eur', 'usd']
 
 
 export default class GrantApplicationParser {
@@ -40,7 +43,10 @@ export default class GrantApplicationParser {
   parseText() {
     const lines = this.text.split('\n') ;
     const firstLines = lines.slice(0,25) ;
-    this.result.projectName = this.findProjectName(firstLines) ;
+    this.result.projectName = this.findProjectName1(lines.slice(0,10)) ;
+    if (!this.result.projectName) {
+        this.result.projectName = this.findProjectName2(firstLines) ;
+    }
     this.result.teamName = this.findTeamName(firstLines) ;
     const paymentInfo = this.findPaymentInfo(firstLines) ;
     this.result.paymentAddress = paymentInfo[0] ;
@@ -48,16 +54,26 @@ export default class GrantApplicationParser {
     this.result.level = this.findLevel(firstLines) ;
     const overviewStartsAt = this.findOverview(firstLines) ;
     const overviewEndsAt = overviewStartsAt + 10 ;
-    this.result.abstract = lines.slice(overviewStartsAt+1, overviewEndsAt).join('\n') ;
+    var overviewLines = lines.slice(overviewStartsAt+1, overviewEndsAt) ;
+    overviewLines = overviewLines.filter((line) => {
+        if (line.startsWith('#') && line.toLowerCase().includes('overview')) {
+            return false ;
+        }
+        return true ;
+    }) ;
+    this.result.abstract = overviewLines.join('\n') ;
     const roadMapStartsAt = this.findRoadmap(lines) ;
     if (roadMapStartsAt) {
         const roadmapLines = lines.slice(roadMapStartsAt) ;
         this.parseRoadmap(roadmapLines) ;
     }
+    this.result.links = parseLinks(this.text) ;
   }
 
   parseRoadmap(lines) {
-    this.result.amount = this.findTotalCost(lines) ;
+    const [amount, currency] = this.findTotalCost(lines) ;
+    this.result.amount = amount ;
+    this.result.amountCurrency = currency ;
     const milestoneIndices = this.findMilestones(lines) ;
     this.result.milestones = [] ;
     if (milestoneIndices.length>1) {
@@ -78,12 +94,26 @@ export default class GrantApplicationParser {
     return milestone ;
   }
 
+  findProjectName1(lines) {
+    for (var i=0 ; i<lines.length ; i++) {
+        var line = lines[i] ;
+        if (line.toUpperCase().includes('PROJECT') && line.toUpperCase().includes('NAME')) {
+            line = line.replace(/project/ig, ' ') ;
+            line = line.replace(/name/ig, ' ') ;
+            line = cleanString(line) ;
+            if (line.length<100) {
+                return line ;
+            }
+        }
+    }
+    return null ;
+  }
 
-  findProjectName(lines) {
+  findProjectName2(lines) {
     for (var i=0 ; i<lines.length ; i++) {
         const line = lines[i] ;
-        if (line.includes('#')) {
-            const title = line.replace('#', '').trim() ;
+        if (line.startsWith('#')) {
+            const title = line.replaceAll('#', '').trim() ;
             if (title!='W3F Grant Proposal') {
                 return title ;
             }
@@ -94,11 +124,11 @@ export default class GrantApplicationParser {
 
   findTeamName(lines) {
     for (var i=0 ; i<lines.length ; i++) {
-        var line = lines[i].toUpperCase() ;
-        if (line.includes('TEAM') || line.includes('PROPOSER')) {
-            line = line.replace('TEAM', ' ') ;
-            line = line.replace('NAME', ' ') ;
-            line = line.replace('PROPOSER', ' ') ;
+        var line = lines[i] ;
+        if (line.toUpperCase().includes('TEAM') || line.toUpperCase().includes('PROPOSER')) {
+            line = line.replace(/team/ig, ' ') ;
+            line = line.replace(/name/ig, ' ') ;
+            line = line.replace(/proposer/ig, ' ') ;
             line = cleanString(line) ;
             return line ;
         }
@@ -137,12 +167,24 @@ export default class GrantApplicationParser {
   }
 
   findCurrency(parts) {
-    const currencies = ['usdt', 'usdc', 'bitcoin', 'btc', 'eth', 'dot', 'ksm']
     for (var i in parts) {
         var s = parts[i] ;
-        if (currencies.includes(s)) {
+        if (CURRENCIES.includes(s)) {
             return s.toUpperCase() ;
         }
+    }
+    return null ;
+  }
+
+  findAmount(parts) {
+    for (var i in parts) {
+        var s = parts[i].replaceAll(',', '') ;
+        try {
+            const amount = Math.floor(s) ;
+            if (amount) {
+                return amount ;
+            }
+        } catch (e) {}
     }
     return null ;
   }
@@ -191,10 +233,15 @@ export default class GrantApplicationParser {
             const index=line.indexOf(':**') ;
             line = line.substring(index+3) ;
             line = cleanString(line) ;
-            return line ;
+            const parts = line.split(' ') ;
+            const amount = this.findAmount(parts) ;
+            const currency = this.findCurrency(parts) ;
+            if (amount) {
+                return [amount,currency] ;
+            }
         }
     }
-    return null ;
+    return [null,null] ;
   }
 
   findMilestones(lines) {
@@ -228,7 +275,10 @@ export default class GrantApplicationParser {
             const index=line.indexOf(':**') ;
             line = line.substring(index+3) ;
             line = cleanString(line) ;
-            return line ;
+            const amount = this.findAmount(line.split(' ')) ;
+            if (amount) {
+                return amount ;
+            }
         }
     }
     return null ;
