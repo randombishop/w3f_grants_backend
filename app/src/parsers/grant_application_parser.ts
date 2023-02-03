@@ -4,7 +4,7 @@ import GrantStatus from '../model/grant_status';
 import {cleanString, parseGitLog, parseLinks} from './utils' ;
 
 
-const CURRENCIES = ['usdt', 'usdc', 'bitcoin', 'btc', 'eth', 'dot', 'ksm', 'eur', 'usd']
+const CURRENCIES = ['usdt', 'usdc', 'bitcoin', 'btc', 'eth', 'dot', 'ksm', 'eur', 'usd', 'dai']
 
 
 export default class GrantApplicationParser {
